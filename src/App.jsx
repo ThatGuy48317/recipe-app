@@ -28,7 +28,7 @@ function App() {
 
   // 1. Fetch data on load
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/recipes')
+    fetch('https://recipe-api-48317.azurewebsites.net/recipes')
       .then(response => response.json())
       .then(data => setRecipes(data))
       .catch(error => console.error("Error:", error));
@@ -41,7 +41,7 @@ function App() {
     const newRecipe = { name, ingredients };
 
     // Send data to Python
-    fetch('http://127.0.0.1:8000/recipes', {
+    fetch('https://recipe-api-48317.azurewebsites.net/recipes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newRecipe)
