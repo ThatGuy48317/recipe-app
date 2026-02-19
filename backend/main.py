@@ -9,7 +9,7 @@ app = FastAPI()
 origins = [
     "http://localhost:5173",    # The default Vite/React port
     "http://127.0.0.1:5173",    # Sometimes localhost is 127.0.0.1
-    "https://proud-beach-0b18d850f.4.azurestaticapps.net/",
+    "https://proud-beach-0b18d850f.4.azurestaticapps.net",
 ]
 
 app.add_middleware(
