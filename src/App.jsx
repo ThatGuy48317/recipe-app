@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 
-// --- RECIPE CARD COMPONENT ---
-// We define this helper component right here so you don't have to worry about imports.
 function RecipeCard(props) {
   const [likes, setLikes] = useState(0);
 
@@ -18,50 +16,61 @@ function RecipeCard(props) {
   );
 }
 
-// --- MAIN APP COMPONENT ---
 function App() {
   const [recipes, setRecipes] = useState([]);
-
-  // New State: These hold the values of our input boxes
   const [name, setName] = useState("");
   const [ingredients, setIngredients] = useState("");
 
-  // 1. Fetch data on load
+  // Pointing to your live Azure Backend URL
+  const API_URL = "https://recipe-api-48317.azurewebsites.net";
+
   useEffect(() => {
-    fetch('https://recipe-api-48317.azurewebsites.net/recipes')
+    fetch(`${API_URL}/recipes`)
       .then(response => response.json())
       .then(data => setRecipes(data))
       .catch(error => console.error("Error:", error));
   }, []);
 
-  // 2. Handle Form Submission
   const handleSubmit = (e) => {
-    e.preventDefault(); // Stop the page from refreshing
+    e.preventDefault();
 
-    const newRecipe = { name, ingredients };
+    // 1. Create a temporary fake ID (using the current time)
+    const tempId = Date.now();
+    const tempRecipe = { id: tempId, name, ingredients };
 
-    // Send data to Python
-    fetch('https://recipe-api-48317.azurewebsites.net/recipes', {
+    // 2. Optimistic Update: Put it on the screen right now!
+    setRecipes([...recipes, tempRecipe]);
+
+    // 3. Clear the text boxes right away
+    setName("");
+    setIngredients("");
+
+    // 4. Send the real data to Azure in the background
+    const newRecipeData = { name: tempRecipe.name, ingredients: tempRecipe.ingredients };
+
+    fetch(`${API_URL}/recipes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newRecipe)
+      body: JSON.stringify(newRecipeData)
     })
       .then(response => response.json())
-      .then(data => {
-        // Add the new recipe to our list immediately
-        setRecipes([...recipes, data]);
-        // Clear the input boxes
-        setName("");
-        setIngredients("");
+      .then(realRecipe => {
+        // 5. Swap the temporary recipe with the real one from Azure
+        setRecipes(currentRecipes =>
+          currentRecipes.map(recipe => recipe.id === tempId ? realRecipe : recipe)
+        );
       })
-      .catch(error => console.error("Error adding recipe:", error));
+      .catch(error => {
+        console.error("Error adding recipe:", error);
+        // If the save fails, remove the temporary recipe from the screen
+        setRecipes(currentRecipes => currentRecipes.filter(recipe => recipe.id !== tempId));
+      });
   };
 
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <h1>My Recipe App</h1>
 
-      {/* --- NEW FORM SECTION --- */}
       <div style={{ background: "#f0f0f0", padding: "15px", borderRadius: "8px", marginBottom: "20px" }}>
         <h3>Add New Recipe</h3>
         <form onSubmit={handleSubmit}>
@@ -71,6 +80,7 @@ function App() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             style={{ marginRight: "10px", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+            required
           />
           <input
             type="text"
@@ -78,6 +88,7 @@ function App() {
             value={ingredients}
             onChange={(e) => setIngredients(e.target.value)}
             style={{ marginRight: "10px", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+            required
           />
           <button
             type="submit"
@@ -88,7 +99,6 @@ function App() {
         </form>
       </div>
 
-      {/* --- RECIPE LIST --- */}
       <div>
         {recipes.map((recipe) => (
           <RecipeCard
